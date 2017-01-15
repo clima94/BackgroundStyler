@@ -22,6 +22,8 @@ import org.apache.http.entity.mime.MultipartEntity;
 import org.apache.http.entity.mime.content.FileBody;
 import org.apache.http.entity.mime.content.StringBody;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.params.HttpConnectionParams;
+import org.apache.http.params.HttpParams;
 
 import java.io.File;
 import java.io.IOException;
@@ -131,7 +133,11 @@ public class StyleService extends Service
             String urlString = "http://54.159.184.84:5000/upload";
             try
             {
+                int timeout = 60 * 10 * 1000; // 10 minutes
                 HttpClient client = new DefaultHttpClient();
+                HttpParams params = client.getParams();
+                HttpConnectionParams.setConnectionTimeout(params, timeout);
+                HttpConnectionParams.setSoTimeout(params, timeout);
                 HttpPost post = new HttpPost(urlString);
                 FileBody bin1 = new FileBody(file[0]);
                 MultipartEntity reqEntity = new MultipartEntity();
