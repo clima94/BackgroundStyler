@@ -2,34 +2,17 @@ package com.example.artbackground;
 
 import android.app.Service;
 import android.app.Activity;
+import android.app.WallpaperManager;
 import android.content.Intent;
 import android.database.ContentObserver;
-import android.database.Cursor;
 import android.os.AsyncTask;
 import android.os.Environment;
-import android.os.FileObserver;
 import android.os.Handler;
 import android.support.annotation.Nullable;
-import android.widget.Button;
-import android.view.View;
-import android.view.View.OnClickListener;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Color;
-import android.net.Uri;
-import android.os.Build;
-import android.os.Bundle;
 import android.os.IBinder;
-import android.provider.MediaStore;
-import android.support.v7.app.ActionBar;
-import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.view.View;
-import android.view.WindowManager;
-import android.widget.EditText;
-import android.widget.ImageView;
-import android.widget.TextView;
-import android.widget.Toast;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -39,15 +22,10 @@ import org.apache.http.entity.mime.MultipartEntity;
 import org.apache.http.entity.mime.content.FileBody;
 import org.apache.http.entity.mime.content.StringBody;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.util.EntityUtils;
-
-import com.example.artbackground.R;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
-
-import static android.R.attr.data;
-import static android.R.attr.duration;
 
 
 public class StyleService extends Service
@@ -56,6 +34,8 @@ public class StyleService extends Service
     Activity act;
 
     private String lastUploaded = null;
+
+    private long takenTime;
 
 
     @Override
@@ -109,6 +89,8 @@ public class StyleService extends Service
         File latest = getLatestFilefromDir(cameraFolder);
         if (!latest.toString().equals(lastUploaded))
         {
+            takenTime = System.currentTimeMillis();
+
             // picture was added
             doFileUpload(latest);
         }
@@ -144,6 +126,8 @@ public class StyleService extends Service
         @Override
         protected Void doInBackground(File... file)
         {
+            System.out.println("Sending file to server: " + file[0]);
+
             String urlString = "http://54.159.184.84:5000/upload";
             try
             {
@@ -156,8 +140,7 @@ public class StyleService extends Service
                 post.setEntity(reqEntity);
                 HttpResponse response = client.execute(post);
                 Bitmap bitmap = BitmapFactory.decodeStream((InputStream) response.getEntity().getContent());
-                // TODO do something with bitmap
-
+                setBackgroundPicture(bitmap);
             } catch (Exception ex)
             {
                 Log.e("Debug", "error: " + ex.getMessage(), ex);
@@ -165,5 +148,21 @@ public class StyleService extends Service
 
             return null;
         }
+    }
+
+    private void setBackgroundPicture(Bitmap bitmap)
+    {
+        System.out.println("Setting background picture. " + (System.currentTimeMillis() + takenTime) / 1000 + " seconds elapsed.");
+
+        WallpaperManager myWallpaperManager
+                = WallpaperManager.getInstance(getApplicationContext());
+        try
+        {
+            myWallpaperManager.setBitmap(bitmap);
+        } catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+
     }
 }
